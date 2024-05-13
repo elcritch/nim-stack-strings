@@ -5,6 +5,12 @@ The `stack_strings` module provides a string implementation that works with 100%
 This module is primarily meant for programs that want to avoid any and all heap allocation, such as code for embedded targets.
 If you use `--mm:arc` and `-d:useMalloc` in tandem with this module, your program will be able to do string operations without allocating any memory at runtime.
 
+# Current Status
+
+This library is functionally complete, but open to new features if they are relevant.
+
+The project is actively maintained, so if you find that there are problems on a version equal to or greater than the minimum supported version, please open an issue.
+
 # Documentation
 
 You can view the latest documentation online [here](https://docs.termer.net/nim/stack_strings/).
@@ -14,4 +20,4 @@ The generated HTML docs will be available in the `docs` directory in the project
 
 # Nim Version Support
 
-Only Nim `1.6.14`+ is supported as there are bugs with `static int` in prior versions.
+Only Nim `1.6.14`+ (including `2.0.0`+) is supported as there are bugs with `static int` in prior versions.
