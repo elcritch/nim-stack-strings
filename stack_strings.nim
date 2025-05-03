@@ -45,7 +45,7 @@ If you have a static string (such as a string literal), you can use the [ss] pro
 runnableExamples:
     let greeting = ss"Hello, world!"
 
-    doAssert greeting is StackStringBase[13]
+    doAssert greeting is StackString[13]
 ##[
 
 The resulting [StackString]'s capacity will be the length of the static string provided.
