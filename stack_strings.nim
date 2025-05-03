@@ -153,7 +153,7 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 
 import std/macros
 
-template checkLenType(lenType, size: typed) =
+template checkCompileTimeLenType(lenType, size: typed) =
     when high(lenType) < size + 1:
         {.error: "stack_strings: LenType is too small to store the string length".}
 
@@ -222,7 +222,7 @@ func ss*(str: static string, lenType: typedesc = defaultLenType()): static auto 
     for i in 0 ..< str.len:
         data[i] = str[i]
 
-    checkLenType(lenType, str.len)
+    checkCompileTimeLenType(lenType, str.len)
     return StackStringBase[lenType, str.len](lenInternal: str.len, data: data)
 
 func stackStringOfCap*(capacity: static Natural, lenType: typedesc = defaultLenType()): static auto =
@@ -234,12 +234,12 @@ func stackStringOfCap*(capacity: static Natural, lenType: typedesc = defaultLenT
         doAssert str is StackStringBase[10]
         doAssert str.len == 0
     
-    checkLenType(lenType, capacity)
+    checkCompileTimeLenType(lenType, capacity)
     return StackStringBase[lenType, capacity](lenInternal: 0, data: array[capacity + 1, char].default)
 
 func len*(this: StackStringBase): Natural {.inline.} =
     ## The current string length
-    
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
     return this.lenInternal
 
 func high*(this: StackStringBase): int {.inline.} =
@@ -265,6 +265,8 @@ func capacity*(this: StackStringBase): Natural {.inline.} =
 
         doAssert extraCap.capacity == 10
         doAssert extraCap.len == 2
+
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
 
     return this.data.len - 1
 
@@ -467,6 +469,8 @@ func `[]=`*(this: var StackStringBase, i: Natural | BackwardsIndex, value: char)
         str[0] = 'Y'
         doAssert str == "Yello world"
 
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     when stackStringsPreventAllocation:
         {.fatal: "The `[]=` proc can allocate memory at runtime, see `stackStringsPreventAllocation`".}
 
@@ -497,6 +501,8 @@ func `[]=`*(this: var StackStringBase, i: Natural | BackwardsIndex, value: char)
 func trySet*(this: var StackStringBase, i: Natural | BackwardsIndex, value: char): bool =
     ## Sets the character at the specified index in the [StackString] and returns true, or returns false if the index is invalid
     
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     let idx = when i is BackwardsIndex:
         this.len - i.int
     else:
@@ -562,6 +568,8 @@ proc unsafeAdd*(this: var StackStringBase, strOrChar: auto) {.inline.} =
 
         bigCap.unsafeAdd(strToAdd)
     
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     when strOrChar is char:
         this.data[this.len] = strOrChar
         inc this.lenInternal
@@ -594,6 +602,8 @@ proc tryAdd*(this: var StackStringBase, strOrChar: auto): bool {.inline.} =
         doAssert bigCap == "Hello"
         doAssert smallCap == ""
     
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     let newLen = when strOrChar is char:
         this.len + 1
     else:
@@ -627,6 +637,8 @@ proc addTruncate*(this: var StackStringBase, strOrChar: auto): bool {.inline, di
         doAssert bigCap == "Hello"
         doAssert smallCap == "Hel"
     
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     when strOrChar is char:
         if this.len >= this.capacity:
             return false
@@ -673,6 +685,8 @@ proc add*(this: var StackStringBase, strOrChar: auto) {.inline, raises: [Insuffi
         bigCap.add('!')
         doAssert bigCap == "Hello!"
 
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
+
     when defined(danger):
         this.unsafeAdd(strOrChar)
     else:
@@ -692,6 +706,8 @@ proc unsafeSetLen*(this: var StackStringBase, newLen: Natural | BackwardsIndex, 
     ## No capacity checks are performed whatsoever; only use this if you're 100% sure you are not exceeding capacity!
     ## 
     ## If `writeZerosOnTruncate` is true and `newLen` is less than the current capacity, the truncated bytes will be zeroed out.
+
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
 
     let lenRes = when newLen is BackwardsIndex:
         this.len - newLen.int
@@ -720,6 +736,8 @@ proc trySetLen*(this: var StackStringBase, newLen: Natural | BackwardsIndex, wri
         doAssert str1.trySetLen(5) == true
         doAssert str1.trySetLen(11) == true
         doAssert str1.trySetLen(12) == false
+
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
 
     when not defined(danger):
         let lenRes = when newLen is BackwardsIndex:
@@ -759,6 +777,8 @@ proc setLen*(this: var StackStringBase, newLen: Natural | BackwardsIndex, writeZ
         # It works with BackwardsIndex, too
         str3.setLen(^1)
         doAssert str3 == "ab"
+
+    checkCompileTimeLenType(this.lenInternal.type, this.data.len - 1)
 
     when stackStringsPreventAllocation:
         {.fatal: "The `setLen` proc can allocate memory at runtime, see `stackStringsPreventAllocation`".}
@@ -917,7 +937,7 @@ proc unsafeToStackString*(content: IndexableChars, size: static Natural, lenType
     result = stackStringOfCap(size, lenType)
     result.unsafeAdd(content)
 
-proc toStackString*[T; N: static int](content: IndexableChars, size: static Natural): StackStringBase[T, N] {.inline.} =
+proc toStackString*(content: IndexableChars, size: static Natural, lenType: typedesc = defaultLenType()): StackStringBase[lenType, size] {.inline.} =
     ## Creates a new [StackString] of the specified size using the provided content.
     ## If you don't want to raise a defect when the input string exceeds the specified size, use [tryToStackString].
     ## If you want to truncate the content in the resulting [StackString] if it's too long, use [toStackStringTruncate].
@@ -933,7 +953,6 @@ proc toStackString*[T; N: static int](content: IndexableChars, size: static Natu
 
         doAssertRaises InsufficientCapacityDefect, stackStr.add(", and everyone in it!")
 
-
     when stackStringsPreventAllocation:
         {.fatal: "The `toStackString` proc can allocate memory at runtime, see `stackStringsPreventAllocation`".}
 
@@ -941,9 +960,11 @@ proc toStackString*[T; N: static int](content: IndexableChars, size: static Natu
     if len > size:
         raise newInsufficientCapacityDefect("Tried to create a StackStringBase of size " & $size & ", but the provided content was of size " & $len, size, len)
 
+    checkCompileTimeLenType(lenType, size)
+
     return content.unsafeToStackString(size)
 
-proc tryToStackString*[T; N: static int](content: IndexableChars, size: static Natural): Option[StackStringBase[T, N]] {.inline.} =
+proc tryToStackString*(content: IndexableChars, size: static Natural, lenType: typedesc = defaultLenType()): Option[StackStringBase[lenType, size]] {.inline.} =
     ## Creates a new [StackString] of the specified size using the provided content.
     ## If the content's length is more than the `size` argument, then None will be returned.
     ## If you want to raise a defect when the input string exceeds the specified size, use [toStackString].
@@ -960,12 +981,14 @@ proc tryToStackString*[T; N: static int](content: IndexableChars, size: static N
 
         doAssert stackStrRes2.isSome
 
+    checkCompileTimeLenType(lenType, size)
+
     if content.len > size:
-        return none[StackStringBase[size]]()
+        return none[StackStringBase[lenType, size]]()
 
     return some content.unsafeToStackString(size)
 
-proc toStackStringTruncate*(content: IndexableChars, size: static Natural, lenType: typedesc = defaultLenType()): auto {.inline.} =
+proc toStackStringTruncate*(content: IndexableChars, size: static Natural, lenType: typedesc = defaultLenType()): StackStringBase[lenType, size] {.inline.} =
     ## Creates a new [StackString] of the specified size using the provided content.
     ## If the content length is more than `size`, only the part of the content that can fit in the size will be included, and the rest will be truncated.
     runnableExamples:
@@ -974,5 +997,8 @@ proc toStackStringTruncate*(content: IndexableChars, size: static Natural, lenTy
 
         doAssert stackStr == "Hello"
 
+    checkCompileTimeLenType(lenType, size)
+
     result = stackStringOfCap(size, lenType)
     result.addTruncate(content)
+

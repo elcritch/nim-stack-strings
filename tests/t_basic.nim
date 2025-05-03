@@ -1,4 +1,5 @@
 import std/unittest
+import std/options
 import std/strutils
 
 import stack_strings
@@ -86,6 +87,19 @@ test "unsafeToStackString":
         check str8.len == 2
         check str8 == "hi"
     )
+
+test "toStackString":
+    let nimStr = "hi"
+    var str9 = nimStr.toStackString(10)
+    check str9.len == 2
+    check str9 == "hi"
+
+test "tryToStackString":
+    let nimStr = "hi"
+    var str9 = nimStr.tryToStackString(10)
+    check str9.isSome()
+    check str9.get().len == 2
+    check str9.get() == "hi"
 
 test "toStackStringTruncate":
     let nimStr = "hi"
