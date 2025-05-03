@@ -151,24 +151,23 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 
     raise newInsufficientCapacityDefect(msg, capacity, requestedCapacity)
 
+template minLenInternal(size: static Natural): auto =
+    when defined(stackStringsUseInt):
+        int
+    elif size < 127:
+        int8
+    elif size < 32767:
+        int16
+    elif size < 2147483647:
+        int32
+    else:
+        int64
+
 type StackString*[Size: static Natural] = object
     ## A stack-allocated string with a fixed capacity
 
-    when defined(stackStringsUseInt):
-        lenInternal: int
-            ## The current string length
-    elif Size + 1 < 128:
-        lenInternal: int8
-            ## The current string length
-    elif Size + 1 < 32768:
-        lenInternal: int16
-            ## The current string length
-    elif Size + 1 < 2147483648:
-        lenInternal: int32
-            ## The current string length
-    else:
-        lenInternal: int64
-            ## The current string length
+    lenInternal: minLenInternal(Size)
+        ## The current string length
 
     data*: array[Size + 1, char]
         ## The underlying string data.
