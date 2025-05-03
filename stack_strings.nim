@@ -191,7 +191,7 @@ func toString*(this: StackStringBase): string =
 
 func `$`*(this: StackStringBase): string {.inline.} =
     ## Converts the [StackString] to a `string`.
-    ## Note that this proc allocates a new string and copies the contents of the StackStringBase into the newly created string.
+    ## Note that this proc allocates a new string and copies the contents of the StackString into the newly created string.
     ## 
     ## See [warnOnStackStringDollar] and [fatalOnStackStringDollar] for information about compiler warnings errors this may cause.
     ## If you want to avoid any warnings or errors specific to this proc, use [toString] instead (which is intentionally more explicit).
@@ -199,7 +199,7 @@ func `$`*(this: StackStringBase): string {.inline.} =
     when stackStringsPreventAllocation:
         {.fatal: "The `$` proc can allocate memory at runtime, see `stackStringsPreventAllocation`".}
 
-    const errMsg {.used.} = "Conversion of StackStringBase to string with `$` proc. If this was intentional, use `toString` instead."
+    const errMsg {.used.} = "Conversion of StackString to string with `$` proc. If this was intentional, use `toString` instead."
     when fatalOnStackStringDollar:
         {.fatal: errMsg.}
     when warnOnStackStringDollar:
@@ -357,7 +357,7 @@ func `[]`*(this: StackStringBase, i: Natural | BackwardsIndex): char {.inline, r
     else:
         i
 
-    # Do bounds check manually because the StackStringBase's len field is the actual bound we want to check, not data.len
+    # Do bounds check manually because the StackString's len field is the actual bound we want to check, not data.len
     when not defined(danger):
         let cond = idx >= this.len or idx < 0
         
@@ -400,7 +400,7 @@ template `[]`*(this: StackStringBase, slice: HSlice): openArray[char] =
     let a = slice.a
     let b = slice.b
 
-    # Do bounds check manually because the StackStringBase's len field is the actual bound we want to check, not data.len
+    # Do bounds check manually because the StackString's len field is the actual bound we want to check, not data.len
     when not defined(danger):
         let cond = (
             a > b or
@@ -477,7 +477,7 @@ func `[]=`*(this: var StackStringBase, i: Natural | BackwardsIndex, value: char)
     else:
         i
 
-    # Do bounds check manually because the StackStringBase's len field is the actual bound we want to check, not data.len
+    # Do bounds check manually because the StackString's len field is the actual bound we want to check, not data.len
     when not defined(danger):
         let cond = idx >= this.len or idx < 0
 
@@ -618,7 +618,7 @@ proc tryAdd*(this: var StackStringBase, strOrChar: auto): bool {.inline.} =
 {.boundChecks: off.}
 proc addTruncate*(this: var StackStringBase, strOrChar: auto): bool {.inline, discardable.} =
     ## Appends the provided value to the [StackString].
-    ## If the capacity of the StackStringBase is not enough to accomodate the value, the chars that cannot be appended will be truncated.
+    ## If the capacity of the StackString is not enough to accomodate the value, the chars that cannot be appended will be truncated.
     ## If the provided value is truncated, `false` will be returned. Otherwise, `true` will be returned.
     ## 
     ## If you want to use a version that raises an exception when there is not enough, you can use [add] instead.
@@ -694,7 +694,7 @@ proc add*(this: var StackStringBase, strOrChar: auto) {.inline, raises: [Insuffi
             else:
                 this.len + strOrChar.len
             raiseInsufficientCapacityDefect(
-                "Cannot append to StackStringBase due to insufficient capacity (capacity: " & $this.capacity & ", required capacity: " & $reqCap & ")",
+                "Cannot append to StackString due to insufficient capacity (capacity: " & $this.capacity & ", required capacity: " & $reqCap & ")",
                 this.capacity, reqCap,
             )
 
@@ -956,7 +956,7 @@ proc toStackString*(content: IndexableChars, size: static Natural, lenType: type
 
     let len = content.len
     if len > size:
-        raise newInsufficientCapacityDefect("Tried to create a StackStringBase of size " & $size & ", but the provided content was of size " & $len, size, len)
+        raise newInsufficientCapacityDefect("Tried to create a StackString of size " & $size & ", but the provided content was of size " & $len, size, len)
 
     checkCompileTimeLenType(lenType, size)
 
