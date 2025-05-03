@@ -154,8 +154,18 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 type StackString*[Size: static Natural] = object
     ## A stack-allocated string with a fixed capacity
 
-    lenInternal: Natural
-        ## The current string length
+    when Size + 1 < 128:
+        lenInternal: int8
+            ## The current string length
+    elif Size + 1 < 32768:
+        lenInternal: int16
+            ## The current string length
+    elif Size + 1 < 2147483648:
+        lenInternal: int32
+            ## The current string length
+    else:
+        lenInternal: int
+            ## The current string length
 
     data*: array[Size + 1, char]
         ## The underlying string data.
@@ -557,7 +567,7 @@ proc unsafeAdd*(this: var StackString, strOrChar: auto) {.inline.} =
         for i in this.len ..< newLen:
             this.data[i] = strOrChar[i - this.len]
         
-        this.lenInternal = newLen
+        this.lenInternal = typeof(this.lenInternal)(newLen)
 {.boundChecks: on.}
 
 {.boundChecks: off.}
@@ -692,7 +702,7 @@ proc unsafeSetLen*(this: var StackString, newLen: Natural | BackwardsIndex, writ
             for i in lenRes ..< this.len:
                 this.data[i] = '\x00'
 
-    this.lenInternal = lenRes
+    this.lenInternal = typeof(this.lenInternal)(lenRes)
 {.boundChecks: on.}
 
 proc trySetLen*(this: var StackString, newLen: Natural | BackwardsIndex, writeZerosOnTruncate: bool = true): bool {.inline.} =
@@ -852,7 +862,7 @@ template toCstring*(this: StackString): cstring =
     when NimMajor > 1: ## Nim 2.0 no longer requires `unsafeaddr`
         cast[cstring](addr this.data[0])
     else:
-        cast[cstring](unsafeaddr this.data[0])
+        cast[cstring](unsafeAddr this.data[0])
 
 proc toHeapCstring*(this: StackString): cstring {.inline.} =
     ## Allocates a `cstring` on the heap and copies the contents of the [StackString] into it.
@@ -881,7 +891,7 @@ proc toHeapCstring*(this: StackString): cstring {.inline.} =
     when NimMajor > 1: ## Nim 2.0 no longer requires `unsafeaddr`
         moveMem(result, addr this.data[0], len)
     else:
-        moveMem(result, unsafeaddr this.data[0], len)
+        moveMem(result, unsafeAddr this.data[0], len)
     result[len] = '\x00'
 
 proc unsafeToStackString*(content: IndexableChars, size: static Natural): StackString[size] {.inline.} =
