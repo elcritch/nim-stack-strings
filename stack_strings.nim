@@ -151,8 +151,6 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 
     raise newInsufficientCapacityDefect(msg, capacity, requestedCapacity)
 
-import std/macros
-
 template checkCompileTimeLenType(lenType, size: typed) =
     when high(lenType) < size + 1:
         {.error: "stack_strings: LenType is too small to store the string length".}
@@ -215,7 +213,7 @@ func ss*(str: static string, lenType: typedesc = defaultLenType()): static auto 
     runnableExamples:
         let name = ss"John Doe"
 
-        doAssert name is StackStringBase[8]
+        doAssert name is StackString[8]
 
     var data: array[str.len + 1, char]
 
@@ -231,7 +229,7 @@ func stackStringOfCap*(capacity: static Natural, lenType: typedesc = defaultLenT
     runnableExamples:
         var str = stackStringOfCap(10)
 
-        doAssert str is StackStringBase[10]
+        doAssert str is StackString[10]
         doAssert str.len == 0
     
     checkCompileTimeLenType(lenType, capacity)
