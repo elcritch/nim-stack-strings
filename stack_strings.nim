@@ -154,7 +154,10 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 type StackString*[Size: static Natural] = object
     ## A stack-allocated string with a fixed capacity
 
-    when Size + 1 < 128:
+    when defined(stackStringsUseInt):
+        lenInternal: int
+            ## The current string length
+    elif Size + 1 < 128:
         lenInternal: int8
             ## The current string length
     elif Size + 1 < 32768:
@@ -164,7 +167,7 @@ type StackString*[Size: static Natural] = object
         lenInternal: int32
             ## The current string length
     else:
-        lenInternal: int
+        lenInternal: int64
             ## The current string length
 
     data*: array[Size + 1, char]
@@ -646,7 +649,7 @@ proc addTruncate*(this: var StackString, strOrChar: auto): bool {.inline, discar
         for i in this.len ..< newLen:
             this.data[i] = strOrChar[i - this.len]
         
-        this.lenInternal = newLen
+        this.lenInternal = typeof(this.lenInternal)(newLen)
 {.boundChecks: on.}
 
 proc add*(this: var StackString, strOrChar: auto) {.inline, raises: [InsufficientCapacityDefect].} =
