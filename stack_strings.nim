@@ -154,14 +154,14 @@ template raiseInsufficientCapacityDefect(msg: string, capacity: Natural, request
 import std/macros
 
 template checkLenType(lenType, size: typed) =
-    when high(lenType) < size:
+    when high(lenType) < size + 1:
         {.error: "stack_strings: LenType is too small to store the string length".}
 
 template defaultLenType(): auto =
     Natural
 
 type StackStringBase*[T; Size: static Natural] = object
-    ## A stack-allocated string with a fixed capacity
+    ## A stack-allocated string with a fixed capacity with a length type of `T`
     
     lenInternal: T ## The current string length
 
@@ -171,6 +171,7 @@ type StackStringBase*[T; Size: static Natural] = object
 
 
 type StackString*[Size: static Natural] = StackStringBase[Natural, Size]
+    ## A stack-allocated string with a fixed capacity
 
 type IndexableChars* = cstring | string | openArray[char] | StackStringBase
     ## Indexable data types that contain chars

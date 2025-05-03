@@ -22,11 +22,11 @@ test "LenType compiletime check":
         echo str2.data
     )
     check compiles(block:
-        var str3 = stackStringOfCap(127, int8)
+        var str3 = stackStringOfCap(126, int8)
         str3.add(ss"lol")
     )
     check not compiles(block:
-        var str3 = stackStringOfCap(128, int8)
+        var str3 = stackStringOfCap(127, int8)
         str3.add(ss"lol")
     )
 
