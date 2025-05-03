@@ -4,7 +4,7 @@ The `stack_strings` module provides a string implementation that works with 100%
 This module is primarily meant for programs that want to avoid any and all heap allocation, such as code for embedded targets.
 If you use `--mm:arc` and `-d:useMalloc` in tandem with this module, your program will be able to do string operations without allocating any memory at runtime.
 
-# The `StackStringBase` Type
+# The `StackString` Type
 
 The [StackString] type is an object with a fixed size buffer and an integer to store its current length.
 It works very similarly to `string`, but its internal buffer cannot be resized, and must be known at compile time.
@@ -20,7 +20,7 @@ runnableExamples:
 
 Note the lack of `new` in the name; there is no runtime allocation going on here.
 
-Under the hood, a `StackStringBase[10]` object was created and returned, and its length was set to `0`.
+Under the hood, a `StackString[10]` object was created and returned, and its length was set to `0`.
 Since buffers are fixed-size and known at compile time, the capacity of the [StackString] is encoded as part of its type.
 
 You can add to a [StackString], assuming it has capacity:
@@ -49,7 +49,7 @@ runnableExamples:
 ##[
 
 The resulting [StackString]'s capacity will be the length of the static string provided.
-In the case of the code above, the type of `greeting` is `StackStringBase[13]`.
+In the case of the code above, the type of `greeting` is `StackString[13]`.
 
 If you have a runtime string (or anything else that's covered by the [IndexableChars] union type) that you want to convert to a [StackString], you can use [toStackString]:
 ]##
@@ -63,7 +63,7 @@ runnableExamples:
 
 See also: [unsafeToStackString], [tryToStackString], [toStackStringTruncate].
 
-# Manipulating `StackStringBase` objects
+# Manipulating `StackString` objects
 
 In Nim, `string` is mutable if it is stored in a `var`, as opposed to a `let`. The same applies to [StackString].
 
